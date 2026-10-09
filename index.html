@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>★9도 미소 측정 및 평가 시스템★ 중앙 통제국 감정관리처</title>
+  <meta name="description" content="단독 동작 9도 미소 측정 및 평가 시스템. 친절은 하되 친해지지 마십시오. 감정은 제외합니다.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- 치명적 시스템 오류 배너 -->
+    <div id="error-banner"></div>
+
+    <!-- 흐르는 전광판 -->
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span>★☆★ 친절은 하되 친해지지 마십시오 ★ 감정은 제외합니다 ★ 표준 미소 각도 9.00° 엄수 ★ 귀하의 안면은 기록됩니다 ★ 9도 달성 시 별도 보상 없음 ★ 웃음은 규격입니다 ★☆★&nbsp;&nbsp;&nbsp;</span>
+        <span>★☆★ 친절은 하되 친해지지 마십시오 ★ 감정은 제외합니다 ★ 표준 미소 각도 9.00° 엄수 ★ 귀하의 안면은 기록됩니다 ★ 9도 달성 시 별도 보상 없음 ★ 웃음은 규격입니다 ★☆★&nbsp;&nbsp;&nbsp;</span>
+      </div>
+    </div>
+
+    <!-- 1. 전단지 헤더 -->
+    <header class="sys-header">
+      <div class="header-left">
+        <div class="stamp">공식<br>인증</div>
+        <div class="sys-title-group">
+          <div class="sys-kicker">중앙 통제국 감정관리처 지정</div>
+          <h1 class="wordart-title">9도 미소 측정 및 평가 시스템</h1>
+        </div>
+        <div class="burst-badge"><span>대망의<br>9.00°</span></div>
+      </div>
+
+      <div class="header-right">
+        <div id="system-state-badge" class="status-badge badge-idle">대기중</div>
+        <div class="header-meta-item">
+          <span id="wakelock-dot" class="meta-dot"></span>
+          <span id="wakelock-indicator">화면 꺼짐 방지: 확인 중</span>
+        </div>
+        <div class="header-meta-item">
+          <span id="system-clock">2026.10.09 00:00:00</span>
+        </div>
+        <button id="btn-mute" class="btn-flyer btn-sm" title="소리 켜기/끄기 [M]">소리 켬</button>
+        <button id="btn-fullscreen" class="btn-flyer btn-sm" title="전체화면 [F]">전체화면</button>
+      </div>
+    </header>
+
+    <!-- 2. 주 계측 워크스페이스 -->
+    <main class="workspace-grid">
+      <section class="viewport-card" aria-label="안면 계측 화면">
+        <div class="viewport-bar">
+          <div class="viewport-bar-left">
+            <span class="blink-red">●</span>
+            <span>안면 계측 화면 (원본 영상 · 좌우반전 없음)</span>
+          </div>
+          <div class="camera-controls">
+            <label for="camera-select">카메라 선택 ▶</label>
+            <select id="camera-select" class="device-select" title="카메라 장치 선택">
+              <option value="">카메라 찾는 중...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="viewport-stage">
+          <!-- 웹캠 피드: 원본 비반전(거울 반전 금지) -->
+          <video id="webcam" playsinline autoplay muted></video>
+          <!-- HUD 캔버스 -->
+          <canvas id="overlay-canvas"></canvas>
+
+          <!-- 사진 기록 동의 창 -->
+          <div id="consent-overlay" class="consent-overlay" hidden>
+            <div class="consent-box">
+              <div class="consent-ribbon">※ 안면 기록 동의 절차 ※</div>
+              <p class="consent-title">귀하의 안면 사진을<br>감사 기록부에 보관하시겠습니까?</p>
+              <ul class="consent-desc">
+                <li><b>동의</b> 시: 증명사진 + 점수가 기록되어 화면 하단에 게시됩니다.</li>
+                <li><b>거부</b> 시: 사진 없이 점수만 기록됩니다.</li>
+                <li>기록은 본 단말기에만 보관되며 외부로 전송되지 않습니다.</li>
+              </ul>
+              <div class="consent-buttons">
+                <button id="btn-consent-yes" class="btn-consent btn-yes">동의함<small>[Y]</small></button>
+                <button id="btn-consent-no" class="btn-consent btn-no">거부함<small>[N]</small></button>
+              </div>
+              <p class="consent-timer"><span id="consent-remaining">10</span>초 내 미선택 시 측정을 취소합니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="viewport-footer">
+          <span class="footer-bullet">☞</span>
+          <span id="hud-instruction-text" class="instruction-text">피험자 대기 중. 카메라를 정면으로 응시하십시오.</span>
+        </div>
+      </section>
+
+      <!-- 우측 쿠폰형 계측표 -->
+      <aside class="telemetry-card" aria-label="실시간 계측표">
+        <div class="coupon-head">
+          <span>✂ 실시간 계측표</span>
+          <span class="coupon-no">No.<span id="tel-subject-id">SUBJECT-0001</span></span>
+        </div>
+
+        <div class="price-tag">
+          <div class="price-label">지금 이 순간 미소 점수</div>
+          <div class="price-value"><span id="tel-realtime-score">---.-</span><small>점</small></div>
+          <div class="meter-wrapper">
+            <div id="tel-meter-fill" class="meter-fill"></div>
+          </div>
+          <div class="price-formula">점수 = 100 − (|측정각 − 9| × 10)</div>
+        </div>
+
+        <table class="spec-table">
+          <tr><th>공인 기준각</th><td id="tel-target-angle">9.00°</td></tr>
+          <tr><th>실시간 측정각</th><td id="tel-current-angle">--.--°</td></tr>
+          <tr><th>기준 편차</th><td id="tel-deviation">--.--°</td></tr>
+          <tr><th>왼쪽 입꼬리 (61)</th><td id="tel-left-angle">--.--°</td></tr>
+          <tr><th>오른쪽 입꼬리 (291)</th><td id="tel-right-angle">--.--°</td></tr>
+          <tr><th>고개 기울기</th><td id="tel-roll-angle">±0.00°</td></tr>
+        </table>
+
+        <div class="directive-box">
+          <div class="directive-title">◆ 행정 강령 제42조 ◆</div>
+          <p class="directive-content">친절은 하되<br>친해지지 마십시오.<br>감정은 제외합니다.</p>
+        </div>
+
+        <div class="privacy-box">
+          <b>※ 알림 ※</b> 귀하의 안면은 기록됩니다.<br>
+          측정 전 사진 기록 동의 여부를 선택할 수 있으며, 거부 시 점수만 남습니다.
+          모든 기록은 본 단말기 내부에만 보관됩니다.
+        </div>
+      </aside>
+    </main>
+
+    <!-- 3. 감사 기록부 (리더보드) -->
+    <section id="leaderboard-section" aria-label="피험자 검증 감사 기록부">
+      <!-- js/leaderboard.js 에서 동적 렌더링 -->
+    </section>
+
+    <!-- 4. 단축키 안내 -->
+    <footer class="footer-shortcuts-bar">
+      <div class="shortcut-group">
+        <span class="shortcut-item"><kbd>Shift+R</kbd> 전체 초기화</span>
+        <span class="shortcut-item"><kbd>Shift+E</kbd> JSON 내보내기</span>
+        <span class="shortcut-item"><kbd>Y</kbd>/<kbd>N</kbd> 사진 동의/거부</span>
+        <span class="shortcut-item"><kbd>Space</kbd> 즉시 재측정</span>
+        <span class="shortcut-item"><kbd>M</kbd> 소리</span>
+        <span class="shortcut-item"><kbd>F</kbd> 전체화면</span>
+      </div>
+      <div>
+        접속 주소: <span id="sys-origin-display">localhost:8080</span> (항상 같은 주소로 실행할 것)
+      </div>
+    </footer>
+  </div>
+
+  <!-- 증명사진 확대 보기 -->
+  <div id="photo-lightbox" class="photo-lightbox" hidden></div>
+
+  <!-- MediaPipe Face Mesh 로컬 스크립트 (오프라인 구동) -->
+  <script src="models/face_mesh.js"></script>
+
+  <!-- 메인 애플리케이션 모듈 -->
+  <script type="module" src="js/app.js"></script>
+  <script>
+    document.getElementById('sys-origin-display').textContent = window.location.origin;
+  </script>
+</body>
+</html>
