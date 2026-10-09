@@ -16,7 +16,8 @@ export const CONFIG = {
   RESULT_DISPLAY_SEC: 8.0,      // 결과 표시 후 자동 대기 복귀 시간 (초)
   LOST_FACE_ABORT_MS: 400,      // 안면 소실 판정 허용 시간 (밀리초)
   CONSENT_TIMEOUT_SEC: 10.0,    // 사진 기록 동의 선택 대기 시간 (초). 미선택 시 측정 취소
-  REARM_ABSENCE_MS: 1200,       // 측정 종료 후 피험자가 화면을 이 시간 이상 벗어나야 다음 측정 개시
+  REARM_ABSENCE_MS: 700,        // 측정 종료 후 피험자가 화면을 이 시간 이상 벗어나면 즉시 새 피험자 측정 무장
+  RESULT_EXIT_FACE_LOST_MS: 1200, // 결과 표시 중 피험자가 화면을 벗어나면 조기 대기 복귀할 딜레이 (밀리초)
 
   // [안면 사진 기록 규격]
   PHOTO: {

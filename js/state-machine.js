@@ -218,9 +218,18 @@ export class MeasurementStateMachine {
 
       case STATES.RESULT:
         const elapsedResult = now - this.timerStart;
+        const exitTimeout = CONFIG.RESULT_EXIT_FACE_LOST_MS || 1200;
+
+        // 결과가 나온 후(최소 1.5초 경과 후) 피험자가 완전히 자리를 떴을 때:
+        // 빈 화면에 결과를 방치하지 않고 즉시 대기(armed=true)로 복귀하여 새 피험자를 맞이함
+        if (elapsedResult >= 1500 && !hasFace && faceLostDuration > exitTimeout) {
+          this.transition(STATES.IDLE, { arm: true });
+          return;
+        }
+
         if (elapsedResult >= this.timerDuration) {
-          // 결과 표시 시간 경과 후 대기로 복귀 (동일 피험자 재측정 방지)
-          this.transition(STATES.IDLE, { disarm: true });
+          // 결과 표시 시간 만료: 피험자가 여전히 서 있으면 disarm, 이미 나갔으면 arm
+          this.transition(STATES.IDLE, { disarm: hasFace, arm: !hasFace });
         }
         break;
 

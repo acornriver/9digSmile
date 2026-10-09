@@ -192,6 +192,7 @@ class Smile9App {
       this.stateMachine.update(false, null);
       this.resetTelemetrySidebar();
     }
+    this.updateRetryButtonVisibility();
   }
 
   /**
@@ -215,12 +216,13 @@ class Smile9App {
         this.consentRemaining.textContent = String(Math.ceil(parseFloat(progressInfo.remainingSec)));
       }
 
-      // 피험자 이탈로 재측정 가능 상태가 되면 안내 문구 갱신 및 재측정 버튼 갱신
+      this.updateRetryButtonVisibility();
+
+      // 피험자 이탈로 재측정 가능 상태가 되면 안내 문구 갱신
       if (state === STATES.IDLE && this.stateMachine.armed !== this.lastArmed) {
         this.lastArmed = this.stateMachine.armed;
         const box = document.getElementById('hud-instruction-text');
         if (box && this.lastArmed) box.textContent = '피험자 대기 중. 카메라를 정면으로 응시하십시오.';
-        this.updateRetryButtonVisibility();
       }
 
       requestAnimationFrame(render);
@@ -468,14 +470,28 @@ class Smile9App {
 
   /**
    * 다시 시도하기 대형 버튼 노출 여부 갱신
+   * [UX 규칙]
+   * - 카메라 앞에 실제 피험자의 얼굴이 존재할 때(hasDetectedFace === true)만 노출됩니다.
+   * - 피험자가 화면을 벗어나거나 자리를 떴다면 버튼을 즉시 숨깁니다.
+   * - 재측정이 필요한 상태:
+   *   1) 결과 판정 화면이 떠 있을 때 (RESULT)
+   *   2) 결과 후 대기 상태이나 방금 피험자가 제자리에 서 있을 때 (IDLE && !armed)
+   *   3) 안면 소실 등으로 측정이 중단되어 피험자가 다시 시도하려 할 때 (ABORTED)
    */
   updateRetryButtonVisibility() {
     if (!this.retryOverlay) return;
     const state = this.stateMachine.getState();
-    const shouldShow = (state === STATES.RESULT) ||
-                       (state === STATES.IDLE && !this.stateMachine.armed) ||
-                       (state === STATES.ABORTED);
-    this.retryOverlay.hidden = !shouldShow;
+    const isFacePresent = !!this.hasDetectedFace;
+
+    const isRetryState = (state === STATES.RESULT) ||
+                         (state === STATES.IDLE && !this.stateMachine.armed) ||
+                         (state === STATES.ABORTED);
+
+    const shouldShow = isFacePresent && isRetryState;
+
+    if (this.retryOverlay.hidden !== !shouldShow) {
+      this.retryOverlay.hidden = !shouldShow;
+    }
   }
 
   updateMuteButtonUI() {
