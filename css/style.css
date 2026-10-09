@@ -552,6 +552,114 @@ body {
 }
 
 /* ==========================================================================
+   다시 시도하기 대형 버튼 오버레이
+   ========================================================================== */
+
+.retry-overlay {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.retry-overlay[hidden] {
+  display: none !important;
+}
+
+@keyframes pulse-retry {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 4px #ffffff, 0 0 25px rgba(255, 242, 0, 0.9), 0 10px 24px rgba(0, 0, 0, 0.6);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 6px #ffffff, 0 0 40px rgba(255, 26, 26, 0.9), 0 14px 28px rgba(0, 0, 0, 0.7);
+  }
+}
+
+@keyframes spin-retry {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.btn-retry {
+  min-width: 380px;
+  max-width: 92vw;
+  padding: 14px 34px 12px;
+  background: linear-gradient(180deg, #fff700 0%, #ffc400 45%, #ff8a00 100%);
+  border: 6px solid #ff1a1a;
+  border-radius: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  user-select: none;
+  outline: none;
+  animation: pulse-retry 1.6s ease-in-out infinite;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.btn-retry:hover {
+  filter: brightness(1.1);
+  transform: scale(1.06) !important;
+}
+
+.btn-retry:active {
+  transform: scale(0.97) !important;
+  filter: brightness(0.95);
+}
+
+.btn-retry-badge {
+  background: #ff1a1a;
+  color: #fff200;
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 900;
+  padding: 2px 14px;
+  border-radius: 20px;
+  border: 2px solid #fff;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  margin-bottom: 5px;
+}
+
+.btn-retry-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: var(--font-head);
+  font-size: 34px;
+  font-weight: 900;
+  color: #0a0a6b;
+  text-shadow: 2px 2px 0 #ffffff, -1px -1px 0 #ffffff;
+  letter-spacing: 1px;
+  line-height: 1.1;
+}
+
+.btn-retry-icon {
+  font-size: 36px;
+  display: inline-block;
+  animation: spin-retry 5s linear infinite;
+}
+
+.btn-retry-sub {
+  margin-top: 5px;
+  font-family: var(--font-gulim);
+  font-size: 13px;
+  font-weight: bold;
+  color: #b30000;
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* ==========================================================================
    우측 쿠폰형 계측표
    ========================================================================== */
 

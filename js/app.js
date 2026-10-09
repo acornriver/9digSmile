@@ -20,6 +20,8 @@ class Smile9App {
     this.leaderboardContainer = document.getElementById('leaderboard-section');
     this.consentOverlay = document.getElementById('consent-overlay');
     this.consentRemaining = document.getElementById('consent-remaining');
+    this.retryOverlay = document.getElementById('retry-overlay');
+    this.btnRetry = document.getElementById('btn-retry');
 
     this.storage = new StorageManager();
     this.audio = new AudioManager();
@@ -52,9 +54,21 @@ class Smile9App {
     this.updateClock();
     setInterval(() => this.updateClock(), 1000);
 
+    // 브라우저 첫 사용자 제스처 시 BGM 및 WebAudio 자동 잠금 해제
+    const unlockAudio = () => {
+      this.audio.init();
+      this.audio.playBgm();
+    };
+    window.addEventListener('pointerdown', unlockAudio, { once: true });
+    window.addEventListener('keydown', unlockAudio, { once: true });
+
+    // 초기 BGM 루프 재생 시도
+    this.audio.playBgm();
+
     this.setupUIControls();
     this.setupShortcuts();
     this.setupWakeLock();
+    this.updateRetryButtonVisibility();
     this.leaderboard.render();
 
     // 1. MediaPipe FaceMesh 초기화
@@ -201,11 +215,12 @@ class Smile9App {
         this.consentRemaining.textContent = String(Math.ceil(parseFloat(progressInfo.remainingSec)));
       }
 
-      // 피험자 이탈로 재측정 가능 상태가 되면 안내 문구 갱신
+      // 피험자 이탈로 재측정 가능 상태가 되면 안내 문구 갱신 및 재측정 버튼 갱신
       if (state === STATES.IDLE && this.stateMachine.armed !== this.lastArmed) {
         this.lastArmed = this.stateMachine.armed;
         const box = document.getElementById('hud-instruction-text');
         if (box && this.lastArmed) box.textContent = '피험자 대기 중. 카메라를 정면으로 응시하십시오.';
+        this.updateRetryButtonVisibility();
       }
 
       requestAnimationFrame(render);
@@ -224,13 +239,15 @@ class Smile9App {
       this.consentOverlay.hidden = state !== STATES.CONSENT;
     }
 
+    this.updateRetryButtonVisibility();
+
     if (state === STATES.IDLE) {
       this.currentSubjectId = this.storage.peekNextSubjectId();
       this.updateStatusBadge('대기중', 'badge-idle');
       if (instructionBox) {
         instructionBox.textContent = this.stateMachine.armed
           ? '피험자 대기 중. 카메라를 정면으로 응시하십시오.'
-          : '측정이 종료되었습니다. 다음 피험자는 잠시 후 진입하십시오. (재측정: 스페이스바)';
+          : '측정이 완료되었습니다. [다시 시도하기] 버튼을 누르거나 잠시 후 다음 피험자가 진입하십시오.';
       }
     } else if (state === STATES.CONSENT) {
       this.updateStatusBadge('동의 확인', 'badge-active');
@@ -250,7 +267,7 @@ class Smile9App {
     } else if (state === STATES.RESULT) {
       this.updateStatusBadge('판정 완료', 'badge-verified');
       if (instructionBox) {
-        instructionBox.textContent = '감정이 배제된 순수 미소 점수입니다.';
+        instructionBox.textContent = '감정이 배제된 순수 미소 점수입니다. 다시 시도하려면 하단 버튼을 누르십시오.';
       }
     } else if (state === STATES.ABORTED) {
       this.updateStatusBadge('※ 경고 ※', 'badge-danger');
@@ -415,13 +432,20 @@ class Smile9App {
       });
     }
 
+    // 다시 시도하기 대형 버튼
+    if (this.btnRetry) {
+      this.btnRetry.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.retryMeasurement();
+      });
+    }
+
     // 캔버스 클릭 시 즉시 리셋 (결과/오류/재측정 대기 상태에서 빠른 전환)
     this.canvas.addEventListener('click', () => {
-      this.audio.init();
       const state = this.stateMachine.getState();
       if (state === STATES.RESULT || state === STATES.ABORTED ||
           (state === STATES.IDLE && !this.stateMachine.armed)) {
-        this.stateMachine.forceReset();
+        this.retryMeasurement();
       }
     });
 
@@ -430,6 +454,28 @@ class Smile9App {
     const btnNo = document.getElementById('btn-consent-no');
     if (btnYes) btnYes.addEventListener('click', () => { this.audio.init(); this.stateMachine.submitConsent(true); });
     if (btnNo) btnNo.addEventListener('click', () => { this.audio.init(); this.stateMachine.submitConsent(false); });
+  }
+
+  /**
+   * 즉시 재측정 시도 (다시 시도하기 대형 버튼, 스페이스바, 캔버스 클릭)
+   */
+  retryMeasurement() {
+    this.audio.init();
+    this.audio.playBgm();
+    this.stateMachine.retryNow(this.hasDetectedFace);
+    this.updateRetryButtonVisibility();
+  }
+
+  /**
+   * 다시 시도하기 대형 버튼 노출 여부 갱신
+   */
+  updateRetryButtonVisibility() {
+    if (!this.retryOverlay) return;
+    const state = this.stateMachine.getState();
+    const shouldShow = (state === STATES.RESULT) ||
+                       (state === STATES.IDLE && !this.stateMachine.armed) ||
+                       (state === STATES.ABORTED);
+    this.retryOverlay.hidden = !shouldShow;
   }
 
   updateMuteButtonUI() {
@@ -457,7 +503,7 @@ class Smile9App {
    * 단축키 등록
    * - Shift + R: 전체 초기화
    * - Shift + E: JSON 내보내기
-   * - Space: 즉시 대기/재측정 전환
+   * - Space: 다시 시도하기 / 즉시 재측정
    * - Y / N: 사진 기록 동의 / 거부
    * - M: 음향 토글
    * - F: 전체화면 토글
@@ -496,7 +542,7 @@ class Smile9App {
         if (state === STATES.RESULT || state === STATES.ABORTED ||
             (state === STATES.IDLE && !this.stateMachine.armed)) {
           e.preventDefault();
-          this.stateMachine.forceReset();
+          this.retryMeasurement();
         }
       }
 

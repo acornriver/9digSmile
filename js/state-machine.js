@@ -267,4 +267,24 @@ export class MeasurementStateMachine {
   forceReset() {
     this.transition(STATES.IDLE, { arm: true });
   }
+
+  /**
+   * 즉시 재측정 시도 (다시 시도하기 대형 버튼 또는 스페이스바)
+   * 현재 얼굴이 감지되어 있다면 동의/카운트다운으로 즉각 돌입하고,
+   * 그렇지 않다면 즉시 재측정 가능 대기(armed=true)로 전환합니다.
+   * @param {boolean} hasFace
+   */
+  retryNow(hasFace = false) {
+    this.armed = true;
+    if (hasFace) {
+      if (CONFIG.PHOTO.ENABLED) {
+        this.transition(STATES.CONSENT);
+      } else {
+        this.photoConsent = false;
+        this.transition(STATES.COUNTDOWN);
+      }
+    } else {
+      this.transition(STATES.IDLE, { arm: true });
+    }
+  }
 }

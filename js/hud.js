@@ -596,7 +596,7 @@ export class CanvasHudRenderer {
     ctx.textAlign = 'center';
     const photoNote = result.photo ? '증명사진 포함' : '사진 미포함';
     ctx.fillText(
-      `※ 감사 기록부 등재 완료 (${photoNote}) ※  ${progressInfo.remainingSec}초 후 대기 복귀  [스페이스바: 즉시 복귀]`,
+      `※ 감사 기록부 등재 완료 (${photoNote}) ※  [다시 시도하기] 버튼을 누르거나 스페이스바 입력`,
       cx0 + cardW / 2, cy0 + cardH - 40 * u
     );
 

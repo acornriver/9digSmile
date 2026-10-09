@@ -27,6 +27,13 @@ export const CONFIG = {
     FACE_PADDING: 0.45          // 얼굴 경계 상자 대비 여백 비율
   },
 
+  // [배경음악 음향 규격]
+  BGM: {
+    SRC: 'asset/9digsong.m4a',  // 루프 재생 배경음악 파일 경로
+    VOLUME: 0.40,               // 배경음악 출력 볼륨 (0.0 ~ 1.0)
+    LOOP: true                  // 무한 루프 재생 여부
+  },
+
   // [미디어파이프 랜드마크 색인 규격]
   LANDMARKS: {
     LIP_TOP: 0,                 // 윗입술 상단 중앙

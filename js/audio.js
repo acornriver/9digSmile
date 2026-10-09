@@ -9,6 +9,42 @@ export class AudioManager {
   constructor() {
     this.ctx = null;
     this.muted = localStorage.getItem(CONFIG.STORAGE_KEYS.MUTE_SOUND) === 'true';
+    this.bgm = null;
+    this.bgmStarted = false;
+    this.setupBgm();
+  }
+
+  setupBgm() {
+    try {
+      this.bgm = new Audio(CONFIG.BGM?.SRC || 'asset/9digsong.m4a');
+      this.bgm.loop = CONFIG.BGM?.LOOP ?? true;
+      this.bgm.volume = CONFIG.BGM?.VOLUME ?? 0.4;
+      this.bgm.muted = this.muted;
+      this.bgm.preload = 'auto';
+    } catch (e) {
+      console.warn('[AUDIO] BGM 오디오 객체 초기화 실패:', e);
+    }
+  }
+
+  playBgm() {
+    if (!this.bgm) return;
+    this.bgm.muted = this.muted;
+    const p = this.bgm.play();
+    if (p !== undefined) {
+      p.then(() => {
+        this.bgmStarted = true;
+        console.log('[AUDIO] 배경음악(9digsong.m4a) 루프 재생 시작');
+      }).catch((err) => {
+        // 브라우저 Autoplay 정책에 의한 차단 (사용자 인터랙션 대기)
+        console.log('[AUDIO] BGM 자동재생 대기 (사용자 제스처 시 즉시 재생)');
+      });
+    }
+  }
+
+  pauseBgm() {
+    if (this.bgm) {
+      this.bgm.pause();
+    }
   }
 
   init() {
@@ -21,11 +57,20 @@ export class AudioManager {
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+    if (!this.bgmStarted && !this.muted) {
+      this.playBgm();
+    }
   }
 
   setMuted(isMuted) {
     this.muted = isMuted;
     localStorage.setItem(CONFIG.STORAGE_KEYS.MUTE_SOUND, String(isMuted));
+    if (this.bgm) {
+      this.bgm.muted = isMuted;
+      if (!isMuted && this.bgm.paused) {
+        this.playBgm();
+      }
+    }
   }
 
   isMuted() {
